@@ -1,0 +1,83 @@
+Q1: How much sales did the top 7 albums achieve?
+
+SELECT b.Title album_name, SUM(il.UnitPrice * il.Quantity) album_total_sales
+FROM artist r 
+JOIN album b
+ON r.ArtistId = b.ArtistId
+JOIN track t
+ON b.AlbumId = t.AlbumId
+JOIN InvoiceLine il
+ON il.TrackId = t.TrackId
+GROUP BY b.AlbumId
+ORDER BY album_total_sales DESC
+LIMIT 7
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Q2: How much money do the top 7 artists in the Brazilian market earn?
+
+SELECT r.Name artist_name, SUM(il.UnitPrice * il.Quantity) total_sales
+FROM artist r
+JOIN album b
+ON r.ArtistId = b.ArtistId  
+JOIN track t
+ON t.AlbumId = b.AlbumId
+JOIN InvoiceLine il
+ON il.TrackId = t.TrackId
+JOIN Invoice i
+ON il.InvoiceId = i.InvoiceId 
+GROUP BY 1
+HAVING BillingCountry = 'Brazil' 
+ORDER BY total_sales DESC
+LIMIT 7
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Q3: Top 7 genres in Brazil
+
+WITH sub AS
+(SELECT  g.Name genre_type, t.Name song_name       
+    FROM genre g
+    LEFT JOIN track t
+		 ON t.GenreId = g.GenreId
+    LEFT JOIN invoiceline il
+		 ON t.TrackId = il.TrackId
+    LEFT JOIN invoice i 
+		 ON i.InvoiceId = il.InvoiceId
+    WHERE BillingCountry = 'Brazil')
+	
+SELECT genre_type, COUNT(song_name) total_songs_sold_per_genre
+FROM sub
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 7
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Q4: Which are the more crowded 7 genres? 
+
+SELECT g.Name genre_type, COUNT(DISTINCT(ArtistId)) num_artists 
+FROM track t 
+JOIN genre g 
+ON t.GenreId = g.GenreId 
+JOIN album b 
+ON b.AlbumId = t.AlbumId 
+GROUP BY 1 
+ORDER BY 2 DESC
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Q5: What type of media do customers prefer?
+
+SELECT m.Name, COUNT(DISTINCT(c.CustomerId)) num_customers
+FROM customer c
+JOIN invoice i
+ON c.CustomerId = i.CustomerId
+JOIN invoiceline il
+ON i.InvoiceId = il.InvoiceId
+JOIN track t
+ON il.TrackId = t.TrackId
+JOIN MediaType m
+ON m.MediaTypeid = t.MediaTypeId
+GROUP BY 1
+ORDER BY 2 DESC
